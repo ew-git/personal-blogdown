@@ -10,38 +10,10 @@ aliases:
 <script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
-<link rel="stylesheet" href="/assets/css/hljs-default.css">
-<script type="text/javascript" async
-  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML">
-</script>
-<script type="text/javascript" src="/assets/js/highlight.pack.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
-<style type="text/css">
-  @font-face {
-    font-family: "DejaVuMin";
-    src: url("/assets/fonts/dejavu-merged-lite.woff") format('woff');
-  }
-  @font-face {
-    font-family: "DejaVuMin";
-    src: url("/assets/fonts/dejavu-merged-lite.woff") format('woff');
-    font-weight: bold;
-  }
-  @font-face {
-    font-family: "DejaVuMin";
-    src: url("/assets/fonts/dejavu-merged-lite.woff") format('woff');
-    font-weight: bold;
-    font-style: italic;
-  }
-  code {
-    font-family: monospace, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "DejaVuMin";
-    }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "DejaVuMin", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  }
-</style>
 <p><em>Notice: this post relies on Unicode characters which may not be included in the font(s) on your current platform, especially mobile. Therefore, you may see empty boxes or question marks for certain characters.</em></p>
 <p>A key benefit of <a href="https://julialang.org/">Julia</a> is the ability to write code which looks similar to the mathematical representation of an algorithm, with simple and expressive syntax, while still being performant.
-Additionally, Julia accepts UTF-8 encoded Unicode characters as variable names, so if a paper defines some quantity, \( _i \), then essentially the same Unicode representation, 𝛍ᵢ, could be used in the code.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>
+Additionally, Julia accepts UTF-8 encoded Unicode characters as variable names, so if a paper defines some quantity,
+<span class="math inline">\(\boldsymbol{\mu}_i\)</span>, then essentially the same Unicode representation, 𝛍ᵢ, could be used in the code.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>
 Although it may seem minor, there’s a certain pedagogical advantage to having such a close match.
 When reading through the code of a package for computing a statistical estimator, it’s easier to parse<br />
 <code>𝚲ᵢ' * 𝐖ᵢ * 𝐮ᵢ * 𝐮ᵢ' * 𝐖ᵢ * 𝚲ᵢ</code> than<br />
