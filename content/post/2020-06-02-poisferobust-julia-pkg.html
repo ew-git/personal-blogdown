@@ -1,0 +1,25 @@
+---
+layout: post
+title:  "Julia PoissonFE.jl Package"
+date:   2020-06-02 12:00:00 -0500
+categories: coding julia
+aliases:
+    - /coding/julia/2020/06/02/poisferobust-julia-pkg.html
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>I’ve released a Julia package, <a href="https://github.com/ew-git/PoissonFE.jl">PoissonFE.jl</a>, to estimate Poisson regression with fixed effects.
+Similar to my R package, <a href="https://cran.r-project.org/package=poisFErobust">poisFErobust</a>, it computes robust standard errors from <a href="https://doi.org/10.1016/S0304-4076%2898%2900033-5">Wooldridge (1999)</a>.</p>
+<p>The Julia package is quite a bit faster than R.
+Aside from the raw speed improvement of Julia, it implements the likelihood function without the fixed effects parameters, so it should be faster than <a href="https://github.com/JuliaStats/GLM.jl">GLM.jl</a> for models with many fixed effect levels (thousands).
+The estimates should match Stata’s command, <code>xtpoisson y x, fe vce(r)</code>.</p>
+<p>I continue to be impressed by Julia’s ecosystem.
+Estimating the coefficients only required implementing the likelihood function.
+Automatic differentiation via <a href="https://github.com/JuliaDiff/ForwardDiff.jl">ForwardDiff.jl</a> enables a simple function call to <a href="https://github.com/JuliaNLSolvers/Optim.jl">Optim.jl</a> which implements efficient line search algorithms.
+There was no need to implement the gradient or Hessian by hand.</p>
+<div id="references" class="section level3">
+<h3>References</h3>
+<p>Wooldridge, Jeffrey M. (1999): “Distribution-free estimation of some nonlinear panel data models,” <em>Journal of Econometrics</em>, 90, 77-97. <a href="https://doi.org/10.1016/S0304-4076%2898%2900033-5">https://doi.org/10.1016/S0304-4076%2898%2900033-5</a></p>
+</div>
