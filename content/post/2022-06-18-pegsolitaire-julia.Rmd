@@ -1,0 +1,307 @@
+---
+layout: post
+date:   2022-06-18 12:00:00 -0500
+categories: coding julia
+title: "Solving Peg Solitaire with Julia"
+author: "Evan Wright"
+
+---
+![](/post/2022-06-18-pegsolitaire-julia_files/Peg_Solitaire_1687_on_Portrait_of_Princess_Soubise_by_Claude-Auguste_Berey.jpg)
+
+[Peg solitaire](https://en.wikipedia.org/wiki/Peg_solitaire) is a singleplayer board game with the objective to remove all game pieces (pegs or marbles) except one from the board by "jumping" them with another peg. 
+The 15-hole triangular variant is commonly found in [Cracker Barrel](https://en.wikipedia.org/wiki/Cracker_Barrel) restaurants in the US. 
+We will solve this variant with Julia. 
+
+The triangular board is laid out as a hexagonal grid, so jumps can occur by moving northwest, northeast, east, southeast, southwest, or west. 
+To simplify our code, we will represent the board as a BitMatrix, a 2d array of 1s and 0s, and restrict moves to valid indices. 
+
+```julia
+INDICES = Vector{Tuple{Int, Int}}()
+board = falses(5, 9)
+for col in axes(board, 2)
+    for row in axes(board, 1)
+        if (row % 2 == col % 2) && (col >= row) && (col <= size(board, 2) + 1 - row)
+            board[row, col] = true
+            push!(INDICES, (row, col))
+        end
+    end
+end
+println("The board is represented as")
+display(board)
+println("Valid indices are")
+println(INDICES)
+```
+
+```
+The board is represented as
+5×9 BitMatrix:
+ 1  0  1  0  1  0  1  0  1
+ 0  1  0  1  0  1  0  1  0
+ 0  0  1  0  1  0  1  0  0
+ 0  0  0  1  0  1  0  0  0
+ 0  0  0  0  1  0  0  0  0
+Valid indices are
+[(1, 1), (2, 2), (1, 3), (3, 3), (2, 4), (4, 4),
+(1, 5), (3, 5), (5, 5), (2, 6), (4, 6), (1, 7),
+(3, 7), (2, 8), (1, 9)]  
+```
+
+To make our life a bit easier, let's first write a function to render the board. 
+I love `printstyled` by the way. 
+If you use the Julia REPL or a supported terminal, the pegs will be cyan. 
+
+```julia
+function showboard(board; upsidedown=false)
+    if upsidedown
+        iiter = reverse(axes(board, 1))
+    else
+        iiter = axes(board, 1)
+    end
+    println("\n------------------")
+    for i in iiter
+        for j in axes(board, 2)
+            if board[i, j]
+                printstyled('█'; color=:cyan)
+            elseif (i % 2 == j % 2) && (j >= i) && (j <= size(board, 2) + 1 - i)
+                printstyled('o'; color=:nothing)
+            else
+                printstyled('░'; color=:nothing)
+            end
+        end
+        if i == first(iiter) + (last(iiter) - first(iiter))÷2
+            print(" pegs: $(sum(board))")
+        end
+        print("\n")
+    end
+    print("------------------\n")
+end
+```
+
+```julia
+board[1, 1] = false # remove a peg for illustration
+showboard(board)
+```
+```
+------------------
+o░█░█░█░█
+░█░█░█░█░
+░░█░█░█░░ pegs: 14
+░░░█░█░░░
+░░░░█░░░░
+------------------
+```
+
+This board is a potential starting position. 
+All holes are filled with pegs except the top left one. 
+
+Next, we need to determine the potential moves. 
+In other words, given the current state of the board, what are the potential
+states of the board after one jump? 
+For each peg, consider its neighbor positions (northwest, northeast, east,
+southeast, southwest, or west). 
+The neighbor position must contain a peg, so we have something to jump. 
+In addition, the neighbor's neighbor in the same direction must be empty,
+so we have a hole to jump to. 
+
+Using the following figure, suppose `i` is the location of the peg that will jump. 
+Then, locations marked `n` are its neighbors, and `n2` are the neighbors' neighbors at a valid index. 
+There are two potential moves: (1) jump from 3,5 to 1,3 and remove the peg at 2,4, and (2) 
+jump from 3,5 to 1,7 and remove the peg at 2,6. 
+As long as the applicable neighbor positions have a peg and the neighbors' neighbors are empty, these moves are valid. 
+
+```
+  1  2  3  4  5  6  7  8  9 
+1       n2          n2   
+2          n     n    
+3       n     i     n   
+4          n     n    
+5  
+```
+
+We must repeat this process, checking for valid moves for each peg in the board. 
+The following function returns a vector of BitMatrix representing board states reachable in one
+move from the current board state (an input BitMatrix). 
+The input `indices` is a vector of tuples representing valid indices for peg locations, so
+we don't have to compute them for each call of the function. 
+`mdist` is a helper function to find valid neighbor locations. 
+
+```julia
+function mdist(a, b)
+    return abs(a[1] - b[1]) + abs(a[2] - b[2])
+end
+
+function getnextstates(board, indices)
+    nextstates = Vector{BitMatrix}()
+    for ind in indices
+        # (1) there must be a peg to use to jump
+        if !board[ind...]
+            continue
+        end
+        neighbors = (n for n in indices if ind[2] != n[2] && mdist(ind, n) <= 2)
+        for n in neighbors
+            # (2) the neighbor location must contain a peg
+            if !board[n...]
+                continue
+            end
+            n2 = (n[1] - (ind[1] - n[1]), n[2] - (ind[2] - n[2]))
+            # (3) the neighbor's neighbor in the same direction must be a valid location and empty
+            if n2 in indices && !board[n2...]
+                # If (1), (2), and (3) are satisfied, make a copy of the current board.
+                newboard = copy(board)
+                # Remove the jumping peg from its current location.
+                newboard[ind...] = false
+                # Remove the jumped peg.
+                newboard[n...] = false
+                # Place the jumping peg in its new location.
+                newboard[n2...] = true
+                # Save the new board state.
+                push!(nextstates, newboard)
+            end
+        end
+    end
+    return nextstates
+end
+```
+
+Now that we have a way to compute the states reachable from the current state, 
+we can apply [depth-first search](https://en.wikipedia.org/wiki/Depth-first_search) 
+(DFS) to find a solution. 
+A full explanation of DFS is outside the scope of this note. 
+However, we use the iterative form (rather than recursive), and the general flow for this problem is 
+as follows:
+
+1. Initialize a vector of states to search (`states`), beginning with the current state (`board`). 
+Initialize an empty vector of states representing the path to the current state (`pathtocurrentstate`).[^1]
+
+2. Pop a state from the vector of states to search, and add it to the path.
+
+3. Check if the state is a winner, i.e. the number of pegs is 1. If so, return the path. 
+
+4. Generate the next possible states, and append them to the vector to be searched next. 
+
+5. Go to 2.
+
+```julia
+function findsolution(board, indices)
+    states = [copy(board)]
+    pathtocurrentstate = [copy(board)]
+    pop!(pathtocurrentstate)
+    while !isempty(states)
+        currentstate = pop!(states)
+        while length(pathtocurrentstate) > 0 && sum(pathtocurrentstate[end]) <= sum(currentstate)
+            # Use the sum as a measure of depth.
+            # Remove any same or lower depth states before pushing the current state to the path.
+            # This is necessary when we recurse "up".
+            pop!(pathtocurrentstate)
+        end
+        push!(pathtocurrentstate, currentstate)
+        if sum(currentstate) <= 1
+            # This is the winning state
+            return pathtocurrentstate
+        end
+        nextstates = getnextstates(currentstate, indices)
+        if !isempty(nextstates)
+            # If there are moves available from current_state, push them to states (recursing down)
+            append!(states, nextstates)
+        end
+    end
+    return nothing
+end
+```
+
+Now that we have a way to find a solution, let's write a single function to
+tie everything together. 
+
+```julia
+function main(printsolution=true)
+    # Initialize board
+    INDICES = Vector{Tuple{Int, Int}}()
+    board = falses(5, 9)
+    for col in axes(board, 2)
+        for row in axes(board, 1)
+            if (row % 2 == col % 2) && (col >= row) && (col <= size(board, 2) + 1 - row)
+                board[row, col] = true
+                push!(INDICES, (row, col))
+            end
+        end
+    end
+
+    board[1,1] = false
+    solution =  findsolution(board, INDICES)
+    if printsolution
+        if isnothing(solution)
+            println("We didn't find any solution.")
+        else
+            println("Found the following solution:")
+            for state in solution
+                showboard(state)
+            end
+        end
+    end
+    return solution
+end
+```
+
+```julia
+main()
+```
+```
+Found the following solution:
+
+------------------
+o░█░█░█░█
+░█░█░█░█░
+░░█░█░█░░ pegs: 14
+░░░█░█░░░
+░░░░█░░░░
+------------------
+
+------------------
+█░o░o░█░█
+░█░█░█░█░
+░░█░█░█░░ pegs: 13
+░░░█░█░░░
+░░░░█░░░░
+------------------
+
+...
+
+------------------
+o░o░o░o░o
+░o░o░o░o░
+░░o░o░o░░ pegs: 2
+░░░o░█░░░
+░░░░█░░░░
+------------------
+
+------------------
+o░o░o░o░o
+░o░o░o░o░
+░░o░o░█░░ pegs: 1
+░░░o░o░░░
+░░░░o░░░░
+------------------
+```
+
+You'll have to run the code yourself if you want the full solution 😀. 
+
+Our method is reasonably fast, 
+```julia
+@time main(false)
+  0.003810 seconds (32.42 k allocations: 1.786 MiB)
+```
+but there is quite some room for improvement, especially if we want to find *all*
+solutions. 
+`getnextstates` copies a lot. 
+We could use an integer to directly represent the board state. 
+I believe this is what BitMatrix does under the hood, but it probably has some overhead. 
+We could cache the states we've already searched, including transformations
+of the board, which is symmetric. 
+For more discussion on peg solitaire solution techniques or additional variants, refer to
+[this page](http://recmath.org/pegsolitaire/index.html) maintained by George Bell. 
+
+
+[^1]: The purpose of `pathtocurrentstate = [copy(board)]` then `pop!(pathtocurrentstate)`
+is just to ensure `pathtocurrentstate` has the same type as `states`.
+
+
