@@ -6,7 +6,8 @@ title: "Solving Peg Solitaire with Julia"
 author: "Evan Wright"
 
 ---
-![](/post/2022-06-18-pegsolitaire-julia_files/Peg_Solitaire_1687_on_Portrait_of_Princess_Soubise_by_Claude-Auguste_Berey.jpg)
+
+<img align="right" src="/post/2022-06-18-pegsolitaire-julia_files/Peg_Solitaire_1687_on_Portrait_of_Princess_Soubise_by_Claude-Auguste_Berey.jpg">
 
 [Peg solitaire](https://en.wikipedia.org/wiki/Peg_solitaire) is a singleplayer board game with the objective to remove all game pieces (pegs or marbles) except one from the board by "jumping" them with another peg. 
 The 15-hole triangular variant is commonly found in [Cracker Barrel](https://en.wikipedia.org/wiki/Cracker_Barrel) restaurants in the US. 
@@ -20,7 +21,8 @@ INDICES = Vector{Tuple{Int, Int}}()
 board = falses(5, 9)
 for col in axes(board, 2)
     for row in axes(board, 1)
-        if (row % 2 == col % 2) && (col >= row) && (col <= size(board, 2) + 1 - row)
+        if ((row % 2 == col % 2) && (col >= row) &&
+                (col <= size(board, 2) + 1 - row))
             board[row, col] = true
             push!(INDICES, (row, col))
         end
@@ -62,7 +64,8 @@ function showboard(board; upsidedown=false)
         for j in axes(board, 2)
             if board[i, j]
                 printstyled('█'; color=:cyan)
-            elseif (i % 2 == j % 2) && (j >= i) && (j <= size(board, 2) + 1 - i)
+            elseif (i % 2 == j % 2) && (j >= i) &&
+                    (j <= size(board, 2) + 1 - i)
                 printstyled('o'; color=:nothing)
             else
                 printstyled('░'; color=:nothing)
@@ -137,16 +140,19 @@ function getnextstates(board, indices)
         if !board[ind...]
             continue
         end
-        neighbors = (n for n in indices if ind[2] != n[2] && mdist(ind, n) <= 2)
+        neighbors = (n for n in indices if ind[2] != n[2] &&
+                                           mdist(ind, n) <= 2)
         for n in neighbors
             # (2) the neighbor location must contain a peg
             if !board[n...]
                 continue
             end
             n2 = (n[1] - (ind[1] - n[1]), n[2] - (ind[2] - n[2]))
-            # (3) the neighbor's neighbor in the same direction must be a valid location and empty
+            # (3) the neighbor's neighbor in the same direction
+            # must be a valid location and empty
             if n2 in indices && !board[n2...]
-                # If (1), (2), and (3) are satisfied, make a copy of the current board.
+                # If (1), (2), and (3) are satisfied,
+                # make a copy of the current board.
                 newboard = copy(board)
                 # Remove the jumping peg from its current location.
                 newboard[ind...] = false
@@ -188,9 +194,11 @@ function findsolution(board, indices)
     pop!(pathtocurrentstate)
     while !isempty(states)
         currentstate = pop!(states)
-        while length(pathtocurrentstate) > 0 && sum(pathtocurrentstate[end]) <= sum(currentstate)
+        while (length(pathtocurrentstate) > 0 &&
+               sum(pathtocurrentstate[end]) <= sum(currentstate))
             # Use the sum as a measure of depth.
-            # Remove any same or lower depth states before pushing the current state to the path.
+            # Remove any same or lower depth states before pushing
+            # the current state to the path.
             # This is necessary when we recurse "up".
             pop!(pathtocurrentstate)
         end
@@ -201,7 +209,8 @@ function findsolution(board, indices)
         end
         nextstates = getnextstates(currentstate, indices)
         if !isempty(nextstates)
-            # If there are moves available from current_state, push them to states (recursing down)
+            # If there are moves available from current_state,
+            # push them to states (recursing down)
             append!(states, nextstates)
         end
     end
@@ -219,7 +228,8 @@ function main(printsolution=true)
     board = falses(5, 9)
     for col in axes(board, 2)
         for row in axes(board, 1)
-            if (row % 2 == col % 2) && (col >= row) && (col <= size(board, 2) + 1 - row)
+            if ((row % 2 == col % 2) && (col >= row) &&
+                (col <= size(board, 2) + 1 - row))
                 board[row, col] = true
                 push!(INDICES, (row, col))
             end

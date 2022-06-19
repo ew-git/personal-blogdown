@@ -10,7 +10,7 @@ author: "Evan Wright"
 <script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
-<p><img src="/post/2022-06-18-pegsolitaire-julia_files/Peg_Solitaire_1687_on_Portrait_of_Princess_Soubise_by_Claude-Auguste_Berey.jpg" /></p>
+<p><img align="right" src="/post/2022-06-18-pegsolitaire-julia_files/Peg_Solitaire_1687_on_Portrait_of_Princess_Soubise_by_Claude-Auguste_Berey.jpg"></p>
 <p><a href="https://en.wikipedia.org/wiki/Peg_solitaire">Peg solitaire</a> is a singleplayer board game with the objective to remove all game pieces (pegs or marbles) except one from the board by “jumping” them with another peg.
 The 15-hole triangular variant is commonly found in <a href="https://en.wikipedia.org/wiki/Cracker_Barrel">Cracker Barrel</a> restaurants in the US.
 We will solve this variant with Julia.</p>
@@ -20,7 +20,8 @@ To simplify our code, we will represent the board as a BitMatrix, a 2d array of 
 board = falses(5, 9)
 for col in axes(board, 2)
     for row in axes(board, 1)
-        if (row % 2 == col % 2) &amp;&amp; (col &gt;= row) &amp;&amp; (col &lt;= size(board, 2) + 1 - row)
+        if ((row % 2 == col % 2) &amp;&amp; (col &gt;= row) &amp;&amp;
+                (col &lt;= size(board, 2) + 1 - row))
             board[row, col] = true
             push!(INDICES, (row, col))
         end
@@ -55,7 +56,8 @@ If you use the Julia REPL or a supported terminal, the pegs will be cyan.</p>
         for j in axes(board, 2)
             if board[i, j]
                 printstyled(&#39;█&#39;; color=:cyan)
-            elseif (i % 2 == j % 2) &amp;&amp; (j &gt;= i) &amp;&amp; (j &lt;= size(board, 2) + 1 - i)
+            elseif (i % 2 == j % 2) &amp;&amp; (j &gt;= i) &amp;&amp;
+                    (j &lt;= size(board, 2) + 1 - i)
                 printstyled(&#39;o&#39;; color=:nothing)
             else
                 printstyled(&#39;░&#39;; color=:nothing)
@@ -115,16 +117,19 @@ function getnextstates(board, indices)
         if !board[ind...]
             continue
         end
-        neighbors = (n for n in indices if ind[2] != n[2] &amp;&amp; mdist(ind, n) &lt;= 2)
+        neighbors = (n for n in indices if ind[2] != n[2] &amp;&amp;
+                                           mdist(ind, n) &lt;= 2)
         for n in neighbors
             # (2) the neighbor location must contain a peg
             if !board[n...]
                 continue
             end
             n2 = (n[1] - (ind[1] - n[1]), n[2] - (ind[2] - n[2]))
-            # (3) the neighbor&#39;s neighbor in the same direction must be a valid location and empty
+            # (3) the neighbor&#39;s neighbor in the same direction
+            # must be a valid location and empty
             if n2 in indices &amp;&amp; !board[n2...]
-                # If (1), (2), and (3) are satisfied, make a copy of the current board.
+                # If (1), (2), and (3) are satisfied,
+                # make a copy of the current board.
                 newboard = copy(board)
                 # Remove the jumping peg from its current location.
                 newboard[ind...] = false
@@ -159,9 +164,11 @@ Initialize an empty vector of states representing the path to the current state 
     pop!(pathtocurrentstate)
     while !isempty(states)
         currentstate = pop!(states)
-        while length(pathtocurrentstate) &gt; 0 &amp;&amp; sum(pathtocurrentstate[end]) &lt;= sum(currentstate)
+        while (length(pathtocurrentstate) &gt; 0 &amp;&amp;
+               sum(pathtocurrentstate[end]) &lt;= sum(currentstate))
             # Use the sum as a measure of depth.
-            # Remove any same or lower depth states before pushing the current state to the path.
+            # Remove any same or lower depth states before pushing
+            # the current state to the path.
             # This is necessary when we recurse &quot;up&quot;.
             pop!(pathtocurrentstate)
         end
@@ -172,7 +179,8 @@ Initialize an empty vector of states representing the path to the current state 
         end
         nextstates = getnextstates(currentstate, indices)
         if !isempty(nextstates)
-            # If there are moves available from current_state, push them to states (recursing down)
+            # If there are moves available from current_state,
+            # push them to states (recursing down)
             append!(states, nextstates)
         end
     end
@@ -186,7 +194,8 @@ tie everything together.</p>
     board = falses(5, 9)
     for col in axes(board, 2)
         for row in axes(board, 1)
-            if (row % 2 == col % 2) &amp;&amp; (col &gt;= row) &amp;&amp; (col &lt;= size(board, 2) + 1 - row)
+            if ((row % 2 == col % 2) &amp;&amp; (col &gt;= row) &amp;&amp;
+                (col &lt;= size(board, 2) + 1 - row))
                 board[row, col] = true
                 push!(INDICES, (row, col))
             end
