@@ -9,6 +9,9 @@ tags:
   - javascript
 ---
 
+*WARNING: Discord [doesn't like](https://support.discord.com/hc/en-us/articles/115002192352-Automated-user-accounts-self-bots-) automation of user accounts, which is the method
+discussed in this post. Use at your own risk.*
+
 As more online communities move to Discord, it's becoming increasingly 
 difficult to find coherent information within those communities. 
 Often, important findings and frequently asked questions are scattered in
@@ -128,7 +131,7 @@ var win = window.open("", "Pins", "toolbar=no,location=no,directories=no,status=
 win.document.body.innerHTML = pincontents.join("\n\n");
 ```
 
-Sample output (redacted):
+Sample output (abbreviated):
 ```md
 
 [//]: # (COMMENT: channel = {..."name":"displayedfirst","position":0,...})
